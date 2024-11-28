@@ -1,0 +1,6 @@
+encryptionsalt: v1:U9ooSaF9Mgk=:v1:sh+Iff8az6Dqhho9:CRkp5bpRfHQ3S2iumzU6oK24x4Wt+Q==
+config:
+  numeris-book:vpcCidr: 10.0.0.0/16
+  numeris-book:dbName: mydatabase
+  numeris-book:dbUsername: Administrator
+  aws:region: us-east-1
