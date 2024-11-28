@@ -44,12 +44,12 @@ class VPC(pulumi.ComponentResource):
                 "vpc_id": self.vpc.id,
                 "public_subnet_ids": [subnet.id for subnet in self.public_subnets],
                 "private_subnet_ids": [subnet.id for subnet in self.private_subnets],
-                "internet_gateway_id": self.igw.id,
+                "internet_gateway_id": self.igw.id
             })
 
         except Exception as e:
             # Pulumi-specific error handling
-            raise Exception(f"Failed to create VPC resources: {str(e)}")
+            raise Exception(f"Failed to create VPC resources: {str(e)}", self)
 
     def _validate_inputs(self, name: str, cidr_block: str):
         """
@@ -85,14 +85,16 @@ class VPC(pulumi.ComponentResource):
                 cidr_block=cidr_block,
                 enable_dns_hostnames=True,
                 enable_dns_support=True,
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-vpc",
                     "Environment": pulumi.get_stack(),
                     "ManagedBy": "Pulumi"
                 }
             )
         except Exception as e:
-            raise Exception(f"Failed to create VPC: {str(e)}")
+            raise pulumi.ResourceError(f"Failed to create VPC: {str(e)}")
 
     def _create_subnets(self, name: str, aws_region: str):
         """
@@ -110,7 +112,9 @@ class VPC(pulumi.ComponentResource):
                     cidr_block=f"10.0.{i+1}.0/24",
                     map_public_ip_on_launch=True,
                     availability_zone=f"{aws_region}{['a', 'b'][i]}",
-                    tags={
+                    tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                         "Name": f"{name}-public-subnet-az{i+1}",
                         "Environment": pulumi.get_stack(),
                         "Type": "Public"
@@ -125,7 +129,9 @@ class VPC(pulumi.ComponentResource):
                     cidr_block=f"10.0.{i+3}.0/24",
                     map_public_ip_on_launch=False,
                     availability_zone=f"{aws_region}{['a', 'b'][i]}",
-                    tags={
+                    tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                         "Name": f"{name}-private-subnet-az{i+1}",
                         "Environment": pulumi.get_stack(),
                         "Type": "Private"
@@ -135,7 +141,7 @@ class VPC(pulumi.ComponentResource):
 
             return public_subnets, private_subnets
         except Exception as e:
-            raise Exception(f"Failed to create subnets: {str(e)}")
+            raise pulumi.ResourceError(f"Failed to create subnets: {str(e)}")
 
     def _create_internet_gateway(self, name: str) -> ec2.InternetGateway:
         """
@@ -148,14 +154,16 @@ class VPC(pulumi.ComponentResource):
             return ec2.InternetGateway(
                 f"{name}-igw",
                 vpc_id=self.vpc.id,
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-igw",
                     "Environment": pulumi.get_stack(),
                     "ManagedBy": "Pulumi"
                 }
             )
         except Exception as e:
-            raise Exception(f"Failed to create Internet Gateway: {str(e)}")
+            raise pulumi.ResourceError(f"Failed to create Internet Gateway: {str(e)}")
 
     def _create_nat_gateway(self, name: str):
         """
@@ -170,7 +178,9 @@ class VPC(pulumi.ComponentResource):
                 f"{name}-nat-gw",
                 allocation_id=nat_eip.id,
                 subnet_id=self.public_subnets[0].id,
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-nat-gw",
                     "Environment": pulumi.get_stack(),
                     "ManagedBy": "Pulumi"
@@ -178,7 +188,7 @@ class VPC(pulumi.ComponentResource):
             )
             return nat_gw, nat_eip
         except Exception as e:
-            raise Exception(f"Failed to create NAT Gateway: {str(e)}")
+            raise pulumi.ResourceError(f"Failed to create NAT Gateway: {str(e)}")
 
     def _create_route_tables(self, name: str):
         """
@@ -195,7 +205,9 @@ class VPC(pulumi.ComponentResource):
                     "cidr_block": "0.0.0.0/0",
                     "gateway_id": self.igw.id,
                 }],
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-public-rt",
                     "Environment": pulumi.get_stack(),
                     "Type": "Public"
@@ -209,7 +221,9 @@ class VPC(pulumi.ComponentResource):
                     "cidr_block": "0.0.0.0/0",
                     "nat_gateway_id": self.nat_gw.id,
                 }],
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-private-rt",
                     "Environment": pulumi.get_stack(),
                     "Type": "Private"
@@ -218,7 +232,7 @@ class VPC(pulumi.ComponentResource):
 
             return public_route_table, private_route_table
         except Exception as e:
-            raise Exception(f"Failed to create Route Tables: {str(e)}")
+            raise pulumi.ResourceError(f"Failed to create Route Tables: {str(e)}")
 
     def _associate_route_tables(self, name: str):
         """
@@ -243,4 +257,4 @@ class VPC(pulumi.ComponentResource):
                     route_table_id=self.private_route_table.id
                 )
         except Exception as e:
-            raise Exception(f"Failed to associate Route Tables: {str(e)}")
+            raise pulumi.ResourceError(f"Failed to associate Route Tables: {str(e)}")

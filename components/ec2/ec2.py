@@ -90,7 +90,9 @@ class EC2Instance(pulumi.ComponentResource):
                 subnet_id=subnet_id,
                 vpc_security_group_ids=security_group_ids,
                 user_data=user_data,
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-instance",
                     "Environment": pulumi.get_stack(),
                     "ManagedBy": "Pulumi",

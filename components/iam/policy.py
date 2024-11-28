@@ -60,7 +60,9 @@ class IAMPolicy(pulumi.ComponentResource):
             return iam.Policy(
                 f"{name}-policy",
                 policy=json.dumps(policy_document),
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-policy",
                     "Environment": pulumi.get_stack(),
                     "ManagedBy": "Pulumi"

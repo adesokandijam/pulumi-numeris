@@ -60,7 +60,9 @@ class ECSCluster(pulumi.ComponentResource):
             return ecs.Cluster(
                 f"{name}-ecs-cluster",
                 name=f"{name}-ecs-cluster",
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-cluster",
                     "Environment": pulumi.get_stack(),
                     "ManagedBy": "Pulumi",

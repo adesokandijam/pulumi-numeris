@@ -64,7 +64,9 @@ class IAMRole(pulumi.ComponentResource):
             return iam.Role(
                 f"{name}-role",
                 assume_role_policy=json.dumps(assume_role_policy),
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-role",
                     "Environment": pulumi.get_stack(),
                     "ManagedBy": "Pulumi"

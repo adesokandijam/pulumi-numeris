@@ -12,7 +12,9 @@ class SSLCertificate(pulumi.ComponentResource):
             domain_name=domain_name,
             validation_method="DNS",
             subject_alternative_names=[f"www.{domain_name}"],  # Optional: SAN for www
-            tags={
+            tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                 "Name": f"{name}-cert",
                 "Environment": pulumi.get_stack(),
             },

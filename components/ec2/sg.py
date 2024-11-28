@@ -75,7 +75,9 @@ class SecurityGroup(pulumi.ComponentResource):
                 vpc_id=vpc_id,
                 ingress=formatted_ingress,
                 egress=egress,
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-sg",
                     "Environment": pulumi.get_stack(),
                     "ManagedBy": "Pulumi",

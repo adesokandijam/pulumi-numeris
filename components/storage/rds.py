@@ -106,7 +106,9 @@ class RDS(pulumi.ComponentResource):
         return rds.SubnetGroup(
             f"{name}-rds-subnet-group",
             subnet_ids=private_subnet_ids,
-            tags={
+            tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                 "Name": f"{name}-rds-subnet-group",
                 "Environment": pulumi.get_stack(),
             }
@@ -147,7 +149,9 @@ class RDS(pulumi.ComponentResource):
             publicly_accessible=False,
             vpc_security_group_ids=[security_group_id],
             db_subnet_group_name=subnet_group.name,
-            tags={
+            tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                 "Name": f"{name}-rds-instance",
                 "Environment": pulumi.get_stack(),
                 "ManagedBy": "Pulumi",

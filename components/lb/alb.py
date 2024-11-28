@@ -79,7 +79,9 @@ class ApplicationLoadBalancer(pulumi.ComponentResource):
                 security_groups=[self.alb_security_group_id],
                 subnets=subnets,
                 enable_deletion_protection=False,
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-alb",
                     "Environment": pulumi.get_stack(),
                     "ManagedBy": "Pulumi"

@@ -95,7 +95,9 @@ class HostBasedALBTargetGroup(pulumi.ComponentResource):
                     "healthy_threshold": 3,
                     "unhealthy_threshold": 3,
                 },
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-tg",
                     "Environment": pulumi.get_stack(),
                     "ManagedBy": "Pulumi"

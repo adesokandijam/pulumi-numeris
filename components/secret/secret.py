@@ -26,7 +26,9 @@ class DBSecret(pulumi.ComponentResource):
             secret_string=pulumi.Output.all(username, password).apply(
                 lambda args: f'{{"username": "{args[0]}", "password": "{args[1]}"}}'
             ),
-            tags={
+            tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                 "Name": f"{name}-db-credentials",
                 "Environment": pulumi.get_stack(),
             }

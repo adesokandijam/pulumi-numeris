@@ -76,7 +76,9 @@ class SSLCertificate(pulumi.ComponentResource):
                 domain_name=domain_name,
                 validation_method="DNS",
                 subject_alternative_names=subject_alternative_names,
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-cert",
                     "Environment": pulumi.get_stack(),
                     "ManagedBy": "Pulumi",

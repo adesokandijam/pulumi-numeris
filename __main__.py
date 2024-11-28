@@ -12,7 +12,6 @@ from pulumi import Output
 
 
 # # Create the VPC
-# Create the VPC
 config = pulumi.Config("numeris-book")
 
 # Configuration values (some required, some optional with defaults)
@@ -20,14 +19,16 @@ vpc_cidr = config.require("vpcCidr")  # Required value for the VPC CIDR block
 db_name = config.get("dbName", "mydatabase")  # Default value for DB name
 db_username = config.get("dbUsername", "admin")  # Default value for DB username
 backup_retention = config.get_int("backupRetention", 7)  # Default value for backup retention
-vpc = VPC(
-    name="my-app-vpc",
-    cidr_block=vpc_cidr,  # Use the CIDR block from config
+stack_name = pulumi.get_stack()
 
+# Create the VPC
+vpc = VPC(
+    name=f"my-app-vpc-{stack_name}",
+    cidr_block=vpc_cidr,  # Use the CIDR block from config
 )
 
 alb_sg = SecurityGroup(
-    "alb-sg",  # Name of the Security Group
+    f"alb-sg-{stack_name}",  # Name of the Security Group with stack name
     vpc_id=vpc.vpc.id,  # VPC ID where the security group will be created
     ingress=[
         {
@@ -54,7 +55,7 @@ alb_sg = SecurityGroup(
 )
 
 ecs_sg = SecurityGroup(
-    "ecs-sg",  # Name of the Security Group
+    f"ecs-sg-{stack_name}",  # Name of the Security Group with stack name
     vpc_id=vpc.vpc.id,  # VPC ID where the security group will be created
     ingress=[{
         "protocol": "tcp",
@@ -71,7 +72,7 @@ ecs_sg = SecurityGroup(
 )
 
 rds_sg = SecurityGroup(
-    "rds-sg",
+    f"rds-sg-{stack_name}",  # Name of the Security Group with stack name
     vpc_id=vpc.vpc.id,  # Replace with your VPC ID
     ingress=[{
         "protocol": "tcp",
@@ -87,66 +88,56 @@ rds_sg = SecurityGroup(
     }],
 )
 
-
-
-# Create the VPC
-
-
-
 # Create the RDS database
 rds_instance = RDS(
-    name="my-app-rds",
+    name=f"my-app-rds-{stack_name}",
     vpc_id=vpc.vpc.id,  # Ensure vpc_id resolves properly
     private_subnet_ids=pulumi.Output.all(*[subnet.id for subnet in vpc.private_subnets]),
     db_name=db_name,  # Use db_name from config
     username=db_username,  # Use db_username from config
     backup_retention=backup_retention,  # Use backup_retention from config
-    # opts=pulumi.ResourceOptions(parent=vpc)
     security_group_id=rds_sg.security_group.id
 )
+
 with open('./iam-policy/ecs-task-execution-policy.json') as f:
     ecs_task_execution_policy = json.load(f)
 
-task_ececution_policy = IAMPolicy(
-    name="ecs-task-execution-policy",
-    policy_document=ecs_task_execution_policy)
-
+task_execution_policy = IAMPolicy(
+    name=f"ecs-task-execution-policy-{stack_name}",
+    policy_document=ecs_task_execution_policy
+)
 
 with open('./assume-role-policy/ecs-task-execution-role.json') as f:
     ecs_task_execution_assume_role_policy = json.load(f)
 
 execution_role = IAMRole(
-    name="ecs-execution-role",
+    name=f"ecs-execution-role-{stack_name}",
     assume_role_policy=ecs_task_execution_assume_role_policy,  # Assume role policy
-    policy_arn=task_ececution_policy.policy.arn  # Pass the ARN of the existing policy
+    policy_arn=task_execution_policy.policy.arn  # Pass the ARN of the existing policy
 )
 
 with open('./iam-policy/ecs-task-policy.json') as f:
     ecs_task_policy = json.load(f)
 
-
 task_policy = IAMPolicy(
-    name="ecs-task-policy",
-    policy_document=ecs_task_policy)
-
+    name=f"ecs-task-policy-{stack_name}",
+    policy_document=ecs_task_policy
+)
 
 task_role = IAMRole(
-    name="ecs-task-role",
+    name=f"ecs-task-role-{stack_name}",
     assume_role_policy=ecs_task_execution_assume_role_policy,  # Assume role policy
     policy_arn=task_policy.policy.arn  # Pass the ARN of the existing policy
 )
 
-ecs_cluster = ECSCluster(name="test-cluster")
-
+ecs_cluster = ECSCluster(name=f"test-cluster-{stack_name}")
 
 # With www subdomain
-ssl_cert_with_www = SSLCertificate("my-app", "dijam.online", include_www=True)
-
-
+ssl_cert_with_www = SSLCertificate(f"my-app-{stack_name}", "dijam.online", include_www=True)
 
 # Create ALB
 alb = ApplicationLoadBalancer(
-    name="my-app-alb",
+    name=f"my-app-alb-{stack_name}",
     vpc_id=vpc.vpc.id,
     subnets=pulumi.Output.all(*[subnet.id for subnet in vpc.public_subnets]),
     certificate_arn=ssl_cert_with_www.certificate.arn,
@@ -154,7 +145,7 @@ alb = ApplicationLoadBalancer(
 )
 
 host_tg_1 = HostBasedALBTargetGroup(
-    name="nginx",
+    f"nginx-{stack_name}",
     listener_arn=alb.https_listener.arn,
     vpc_id=vpc.vpc.id,
     host_condition="dijam.online",
@@ -162,11 +153,8 @@ host_tg_1 = HostBasedALBTargetGroup(
     container_port=80
 )
 
-# Define the ECS Security Group using the custom SecurityGroup class
-
-
 nginx_service = ECSService(
-    name="nginx",
+    name=f"nginx-{stack_name}",
     cluster_arn=ecs_cluster.cluster.arn,
     task_execution_role_arn=execution_role.role.arn,
     target_group_arn=host_tg_1.target_group.arn,
@@ -176,13 +164,13 @@ nginx_service = ECSService(
     desired_count=1,
     subnets=pulumi.Output.all(*[subnet.id for subnet in vpc.private_subnets]),
     runtime_architecture="ARM64",  # Specify ARM architecture
-    security_group_id = alb_sg.security_group.id,
-    vpc_id = vpc.vpc.id
+    security_group_id=alb_sg.security_group.id,
+    vpc_id=vpc.vpc.id
 )
 
 # Define Security Group for Elasticsearch, which allows inbound from either another SG or VPC CIDR
 elasticsearch_sg = SecurityGroup(
-    name="elasticsearch-sg",
+    f"elasticsearch-sg-{stack_name}",
     vpc_id=vpc.vpc.id,
     ingress=[
         # Allow SSH from anywhere
@@ -228,21 +216,13 @@ curl http://localhost:9200
 
 # Elasticsearch Instance
 elasticsearch_instance = EC2Instance(
-    name="elasticsearch-instance",
+    f"elasticsearch-instance-{stack_name}",
     ami="ami-0866a3c8686eaeeba",  # Example AMI ID
     instance_type="t2.micro",  # Example instance type
     subnet_id=vpc.public_subnets[0].id,
     security_group_ids=[elasticsearch_sg.security_group.id],
     user_data=elasticsearch_user_data,
-    tags={"Name": "Elasticsearch-Instance", "Environment": "Development"}
+    tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234","Name": f"Elasticsearch-Instance-{stack_name}", "Environment": "Development"}
 )
-
-# elasticsearch_instance_1 = EC2Instance(
-#     name="elasticsearch-instance-1",
-#     ami="ami-0866a3c8686eaeeba",  # Example AMI ID
-#     instance_type="t2.micro",  # Example instance type
-#     subnet_id=vpc.public_subnets[0].id,
-#     security_group_ids=[elasticsearch_sg.security_group.id],
-#     user_data=elasticsearch_user_data,
-#     tags={"Name": "Elasticsearch-Instance-1", "Environment": "Development"}
-# )

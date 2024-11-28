@@ -112,7 +112,9 @@ class ECSService(pulumi.ComponentResource):
                 f"{name}-log-group",
                 name=f"/ecs/{name}",
                 retention_in_days=7,
-                tags={
+                tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                     "Name": f"{name}-log-group",
                     "Environment": pulumi.get_stack(),
                 },
@@ -186,7 +188,9 @@ class ECSService(pulumi.ComponentResource):
                 "containerName": container_name,
                 "containerPort": container_port,
             }],
-            tags={
+            tags={"Owner": "Dijam",
+    "Project": "Numeris",
+    "CostCenter": "1234",
                 "Name": f"{name}-service",
                 "Environment": pulumi.get_stack(),
             },
