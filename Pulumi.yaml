@@ -1,0 +1,13 @@
+name: pulumi-numeris
+description: Assessment for Senior DevOps Engineer
+runtime:
+  name: python
+  options:
+    toolchain: pip
+    virtualenv: venv
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: aws-python
+backend:
+  url: s3://pulumi-numeris-s3-state-bucket-184ehv983fh32hc
