@@ -27,8 +27,8 @@ class DBSecret(pulumi.ComponentResource):
                 lambda args: f'{{"username": "{args[0]}", "password": "{args[1]}"}}'
             ),
             tags={"Owner": "Dijam",
-    "Project": "Numeris",
-    "CostCenter": "1234",
+                    "Project": "Numeris",
+                    "CostCenter": "1234",
                 "Name": f"{name}-db-credentials",
                 "Environment": pulumi.get_stack(),
             }

@@ -223,6 +223,6 @@ elasticsearch_instance = EC2Instance(
     security_group_ids=[elasticsearch_sg.security_group.id],
     user_data=elasticsearch_user_data,
     tags={"Owner": "Dijam",
-    "Project": "Numeris",
-    "CostCenter": "1234","Name": f"Elasticsearch-Instance-{stack_name}", "Environment": "Development"}
+                    "Project": "Numeris",
+                    "CostCenter": "1234","Name": f"Elasticsearch-Instance-{stack_name}", "Environment": "Development"}
 )

@@ -80,8 +80,8 @@ class ApplicationLoadBalancer(pulumi.ComponentResource):
                 subnets=subnets,
                 enable_deletion_protection=False,
                 tags={"Owner": "Dijam",
-    "Project": "Numeris",
-    "CostCenter": "1234",
+                    "Project": "Numeris",
+                    "CostCenter": "1234",
                     "Name": f"{name}-alb",
                     "Environment": pulumi.get_stack(),
                     "ManagedBy": "Pulumi"
