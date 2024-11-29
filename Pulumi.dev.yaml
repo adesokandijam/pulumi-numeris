@@ -1,4 +1,4 @@
-encryptionsalt: v1:U9ooSaF9Mgk=:v1:sh+Iff8az6Dqhho9:CRkp5bpRfHQ3S2iumzU6oK24x4Wt+Q==
+encryptionsalt: v1:ylfZfQT15yg=:v1:0Q+n/ZPhuyOKIzpL:AhusbF2AEy52HQ9aMABOFzh0xamI/g==
 config:
   numeris-book:vpcCidr: 10.0.0.0/16
   numeris-book:dbName: mydatabase
