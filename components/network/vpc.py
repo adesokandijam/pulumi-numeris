@@ -5,7 +5,7 @@ import ipaddress
 class VPC(pulumi.ComponentResource):
     def __init__(self, name: str, cidr_block: str = "10.0.0.0/16", opts=None):
         """
-        Create a VPC with public and private subnets across two availability zones.
+        Create a VPC with public and private subnets across two availability zones, and a VPC endpoint.
         
         :param name: Base name for resources
         :param cidr_block: CIDR block for the VPC
@@ -39,12 +39,16 @@ class VPC(pulumi.ComponentResource):
             # Associate Subnets with Route Tables
             self._associate_route_tables(name)
 
+            # Create VPC Endpoint (for S3 in this example)
+            self.s3_vpc_endpoint = self._create_vpc_endpoint(name)
+
             # Export Outputs
             self.register_outputs({
                 "vpc_id": self.vpc.id,
                 "public_subnet_ids": [subnet.id for subnet in self.public_subnets],
                 "private_subnet_ids": [subnet.id for subnet in self.private_subnets],
-                "internet_gateway_id": self.igw.id
+                "internet_gateway_id": self.igw.id,
+                "s3_vpc_endpoint_id": self.s3_vpc_endpoint.id
             })
 
         except Exception as e:
@@ -223,38 +227,4 @@ class VPC(pulumi.ComponentResource):
                 }],
                 tags={"Owner": "Dijam",
     "Project": "Numeris",
-    "CostCenter": "1234",
-                    "Name": f"{name}-private-rt",
-                    "Environment": pulumi.get_stack(),
-                    "Type": "Private"
-                }
-            )
-
-            return public_route_table, private_route_table
-        except Exception as e:
-            raise pulumi.ResourceError(f"Failed to create Route Tables: {str(e)}")
-
-    def _associate_route_tables(self, name: str):
-        """
-        Associate subnets with their respective route tables.
-        
-        :param name: Base name for route table associations
-        """
-        try:
-            # Public subnet associations
-            for i, subnet in enumerate(self.public_subnets):
-                ec2.RouteTableAssociation(
-                    f"{name}-public-rta-az{i+1}",
-                    subnet_id=subnet.id,
-                    route_table_id=self.public_route_table.id
-                )
-
-            # Private subnet associations
-            for i, subnet in enumerate(self.private_subnets):
-                ec2.RouteTableAssociation(
-                    f"{name}-private-rta-az{i+1}",
-                    subnet_id=subnet.id,
-                    route_table_id=self.private_route_table.id
-                )
-        except Exception as e:
-            raise pulumi.ResourceError(f"Failed to associate Route Tables: {str(e)}")
+   
