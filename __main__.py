@@ -168,20 +168,31 @@ nginx_service = ECSService(
     vpc_id=vpc.vpc.id
 )
 
-# Define Security Group for Elasticsearch, which allows inbound from either another SG or VPC CIDR
-elasticsearch_sg = SecurityGroup(
-    f"elasticsearch-sg-{stack_name}",
+kibana_logstash_sg = SecurityGroup(
+    f"kibana-logstash-sg-{stack_name}",
     vpc_id=vpc.vpc.id,
     ingress=[
-        # Allow SSH from anywhere
-        {"protocol": "tcp", "from_port": 22, "to_port": 22, "cidr_block": "0.0.0.0/0"},  # SSH
         # Allow Elasticsearch access from another SG (e.g., Kibana SG)
-        {"protocol": "tcp", "from_port": 9200, "to_port": 9200, "cidr_block": "0.0.0.0/0"},  # Elasticsearch
+        {"protocol": "tcp", "from_port": 5601, "to_port": 5601, "cidr_block": "0.0.0.0/0"},  # Elasticsearch
     ],
     egress=[
         {"protocol": "-1", "from_port": 0, "to_port": 0, "cidr_blocks": ["0.0.0.0/0"]},  # Allow all outbound
     ]
 )
+
+# Define Security Group for Elasticsearch, which allows inbound from either another SG or VPC CIDR
+elasticsearch_sg = SecurityGroup(
+    f"elasticsearch-sg-{stack_name}",
+    vpc_id=vpc.vpc.id,
+    ingress=[
+        # Allow Elasticsearch access from another SG (e.g., Kibana SG)
+        {"protocol": "tcp", "from_port": 9200, "to_port": 9200, "security_group_id": kibana_logstash_sg.security_group.id},  # Elasticsearch
+    ],
+    egress=[
+        {"protocol": "-1", "from_port": 0, "to_port": 0, "cidr_blocks": ["0.0.0.0/0"]},  # Allow all outbound
+    ]
+)
+
 
 elasticsearch_user_data = '''#!/bin/bash
 # Update packages
@@ -219,10 +230,68 @@ elasticsearch_instance = EC2Instance(
     f"elasticsearch-instance-{stack_name}",
     ami="ami-0866a3c8686eaeeba",  # Example AMI ID
     instance_type="t2.micro",  # Example instance type
-    subnet_id=vpc.public_subnets[0].id,
+    subnet_id=vpc.private_subnets[0].id,
     security_group_ids=[elasticsearch_sg.security_group.id],
     user_data=elasticsearch_user_data,
     tags={"Owner": "Dijam",
                     "Project": "Numeris",
-                    "CostCenter": "1234","Name": f"Elasticsearch-Instance-{stack_name}", "Environment": "Development"}
+                    "CostCenter": "1234","Name": f"Elasticsearch-Instance-{stack_name}"}
+)
+
+kibana_logstash_user_data = pulumi.Output.all(elasticsearch_instance.instance.private_ip).apply(
+    lambda elasticsearch_private_ip: f'''#!/bin/bash
+# Update packages
+sudo apt-get update -y
+
+# Install default JDK (required by Logstash)
+sudo apt install default-jdk default-jre -y
+
+# Install Kibana
+sudo apt-get install kibana -y
+
+# Configure Kibana to connect to Elasticsearch
+sudo bash -c 'echo "server.host: 0.0.0.0" >> /etc/kibana/kibana.yml'
+sudo bash -c 'echo "elasticsearch.hosts: [\"http://{elasticsearch_private_ip}:9200\"]" >> /etc/kibana/kibana.yml'
+
+# Start Kibana
+sudo systemctl start kibana
+sudo systemctl enable kibana
+
+# Install Logstash
+sudo apt-get install logstash -y
+
+# Configure Logstash to send logs to Elasticsearch
+echo "input {{
+    file {{
+        path => \"/var/log/*.log\"
+        start_position => \"beginning\"
+    }}
+}}
+
+output {{
+    elasticsearch {{
+        hosts => [\"http://{elasticsearch_private_ip}:9200\"]
+        index => \"logstash-%{{+YYYY.MM.dd}}\"
+    }}
+}}" | sudo tee /etc/logstash/conf.d/logstash.conf
+
+# Start Logstash
+sudo systemctl start logstash
+sudo systemctl enable logstash
+
+# Test Logstash
+curl -XGET 'http://localhost:9200/_cat/indices?v'
+'''
+)
+
+kibana_logstash_instance = EC2Instance(
+    f"kibana-logstash-instance-{stack_name}",
+    ami="ami-0866a3c8686eaeeba",  # Example AMI ID
+    instance_type="t2.micro",  # Example instance type
+    subnet_id=vpc.public_subnets[0].id,
+    security_group_ids=[kibana_logstash_sg.security_group.id],
+    user_data=kibana_logstash_user_data,
+    tags={"Owner": "Dijam",
+                    "Project": "Numeris",
+                    "CostCenter": "1234","Name": f"Kibana-Logstash-Instance-{stack_name}"}
 )
